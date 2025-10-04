@@ -50,14 +50,17 @@ export default function ChartBotScreen() {
   const [conversationalResponse, setConversationalResponse] = useState<string>('');
   const [isNarrating, setIsNarrating] = useState(false);
   const [activeMode, setActiveMode] = useState<'crop' | 'animal'>('crop');
+  const [queryMode, setQueryMode] = useState<'info' | 'query'>('info');
   const [language, setLanguage] = useState('en');
 
   const isStructuredQuery = (query: string): boolean => {
+    if (queryMode === 'query') return false;
+
     const structuredKeywords = [
       'tell me about', 'information about', 'details about', 'cultivation of',
       'growing', 'farming', 'requirements for', 'how to grow', 'care for'
     ];
-    
+
     const lowerQuery = query.toLowerCase();
     return structuredKeywords.some(keyword => lowerQuery.includes(keyword)) ||
            CROP_SHORTCUTS.some(crop => lowerQuery.includes(crop.name.toLowerCase())) ||
@@ -227,7 +230,7 @@ export default function ChartBotScreen() {
           </Text>
         </View>
 
-        {/* Mode Toggle */}
+        {/* Category Toggle - Crop or Animal */}
         <View style={styles.modeToggle}>
           <TouchableOpacity
             style={[styles.modeButton, activeMode === 'crop' && styles.activeModeButton]}
@@ -243,6 +246,26 @@ export default function ChartBotScreen() {
           >
             <Text style={[styles.modeButtonText, activeMode === 'animal' && styles.activeModeButtonText]}>
               🐄 Animals
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Query Mode Toggle - Info or Query */}
+        <View style={styles.queryModeToggle}>
+          <TouchableOpacity
+            style={[styles.queryModeButton, queryMode === 'info' && styles.activeQueryModeButton]}
+            onPress={() => setQueryMode('info')}
+          >
+            <Text style={[styles.queryModeButtonText, queryMode === 'info' && styles.activeQueryModeButtonText]}>
+              📋 {activeMode === 'crop' ? 'Crop Info' : 'Animal Info'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.queryModeButton, queryMode === 'query' && styles.activeQueryModeButton]}
+            onPress={() => setQueryMode('query')}
+          >
+            <Text style={[styles.queryModeButtonText, queryMode === 'query' && styles.activeQueryModeButtonText]}>
+              💬 Query
             </Text>
           </TouchableOpacity>
         </View>
@@ -274,7 +297,15 @@ export default function ChartBotScreen() {
               <Search size={20} color="#65676B" />
               <TextInput
                 style={styles.searchInput}
-                placeholder={activeMode === 'crop' ? "Ask about any crop... (e.g., 'wheat cultivation')" : "Ask about any animal... (e.g., 'dairy cow care')"}
+                placeholder={
+                  queryMode === 'info'
+                    ? activeMode === 'crop'
+                      ? "Ask about any crop... (e.g., 'wheat cultivation')"
+                      : "Ask about any animal... (e.g., 'dairy cow care')"
+                    : activeMode === 'crop'
+                      ? "Ask a question... (e.g., 'Which country produces the most rice?')"
+                      : "Ask a question... (e.g., 'Which country produces the most milk?')"
+                }
                 value={query}
                 onChangeText={setQuery}
                 onSubmitEditing={() => handleSearch(query)}
@@ -300,12 +331,16 @@ export default function ChartBotScreen() {
             disabled={!query.trim()}
           >
             <Text style={styles.searchButtonText}>
-              Get {activeMode === 'crop' ? 'Crop' : 'Animal'} Information
+              {queryMode === 'info'
+                ? `Get ${activeMode === 'crop' ? 'Crop' : 'Animal'} Information`
+                : 'Ask Question'
+              }
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Shortcuts */}
+        {/* Shortcuts - Only show in Info mode */}
+        {queryMode === 'info' && (
         <View style={styles.shortcutsSection}>
           <Text style={styles.sectionTitle}>
             {activeMode === 'crop' ? '🌾 Popular Crops' : '🐄 Popular Animals'}
@@ -341,11 +376,22 @@ export default function ChartBotScreen() {
             ))}
           </View>
         </View>
+        )}
 
         {/* FAQ Section */}
         <View style={styles.faqSection}>
-          <Text style={styles.sectionTitle}>❓ Frequently Asked Questions</Text>
-          {(activeMode === 'crop' ? SAMPLE_FAQS : ANIMAL_FAQS).map((faq, index) => (
+          <Text style={styles.sectionTitle}>
+            {queryMode === 'info'
+              ? '❓ Frequently Asked Questions'
+              : '💡 Sample Questions'
+            }
+          </Text>
+          {(queryMode === 'info'
+            ? (activeMode === 'crop' ? SAMPLE_FAQS : ANIMAL_FAQS)
+            : (activeMode === 'crop'
+              ? ['Which country produces the most rice?', 'What is the global wheat production?', 'Best climate for growing coffee?', 'Largest cotton exporter?']
+              : ['Which country produces the most milk?', 'Largest beef exporter?', 'Global egg production statistics?', 'Top honey producing countries?'])
+          ).map((faq, index) => (
             <TouchableOpacity
               key={index}
               style={styles.faqItem}
@@ -929,6 +975,36 @@ const styles = StyleSheet.create({
     color: '#65676B',
   },
   activeLangButtonText: {
+    color: '#FFFFFF',
+  },
+  queryModeToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 25,
+    padding: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  queryModeButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  activeQueryModeButton: {
+    backgroundColor: '#42B883',
+  },
+  queryModeButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#65676B',
+  },
+  activeQueryModeButtonText: {
     color: '#FFFFFF',
   },
   animalCard: {
